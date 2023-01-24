@@ -1,0 +1,164 @@
+#include <avr/io.h>
+#include <util/delay.h>
+#include <Arduino.h>
+#include <SPI.h>
+#include <stdio.h>
+#include <string.h>
+#include <Wire.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial Serial1(0,1);
+
+//char acciones[100];
+int accion;
+char acciones[100];
+char dato;
+bool iniciar = false;
+size_t count = 0;
+
+void Movimiento(int accion) {
+  switch (accion) {
+    case 1:
+      PORTD = (1<<PD3) | (1<<PD5) | (1<<PD7);
+      _delay_ms(4000);
+      PORTD = PORTD& ~(0B10100000);
+      _delay_ms(1000);
+      break;
+    case 2:
+      PORTD = (1<<PD3) | (1<<PD4) | (1<<PD6);
+      _delay_ms(4000);
+      PORTD = PORTD& ~(0B01010000);
+      _delay_ms(1000);
+      break;
+    case 3:
+      PORTD = (1<<PD3) | (1<<PD4) | (1<<PD7);
+      _delay_ms(4000);
+      PORTD = PORTD& ~(0B10010000);
+      _delay_ms(1000);
+     
+       
+      break;
+    case 4:
+      PORTD = (1<<PD3) | (1<<PD5) | (1<<PD6);
+      _delay_ms(4000);
+      PORTD = PORTD& ~(0B01100000);
+      _delay_ms(1000);
+    
+      break;
+    default:
+      break;
+  }
+
+}
+
+int obtener_accion(char acciones[10], int i){
+  char extraida[100];
+  strncpy(extraida, acciones + i, 1);
+  switch (atoi(extraida)) {
+    case 1:
+      return 1;
+      break;
+    case 2:
+      return 2;
+      break;
+    case 3:
+      return 3;
+      break;
+    case 4:
+      return 4; 
+      break;
+    default:
+      return 0;
+      break;
+  }
+  return 0;
+}
+
+void obtener_acciones(char dato){
+    char d[100] = "";
+    d[0] = {dato};
+    switch (atoi(d)) {
+    case 1:
+      strcat(acciones, "1"); 
+      _delay_ms(500);
+      break;
+    case 2:
+      strcat(acciones, "2"); 
+      _delay_ms(500);
+      break;
+    case 3:
+      strcat(acciones, "3"); 
+      _delay_ms(500);
+      break;
+    case 4:
+      strcat(acciones, "4"); 
+      _delay_ms(500);
+      break;
+    case 5:
+      iniciar = true;
+      _delay_ms(500);
+      break; 
+    default:
+      break;
+  }
+    
+
+    
+  
+  if (PINB & (1<<0))
+  {
+    strcat(acciones, "1"); 
+    _delay_ms(500);
+  }
+  if (PINB & (1<<1))
+  {
+      strcat(acciones, "2");
+      _delay_ms(500);
+  }
+  if (PINB & (1<<2))
+  {
+      strcat(acciones, "3");
+      _delay_ms(500);
+  }
+  if (PINB & (1<<3))
+  {
+      strcat(acciones, "4");
+      _delay_ms(500);
+  }
+}
+
+void setup()  
+{
+  DDRD |= 0B11111000; 
+  Serial.begin(9600);
+  
+
+}
+
+void loop() 
+{
+  if (Serial.available()>0)
+  {
+    dato=Serial.read();
+    
+  }
+  obtener_acciones(dato);
+ 
+  
+  
+
+
+  if ((PINB & (1<<4)) || iniciar)
+  {
+    iniciar=false;
+    count = strlen(acciones);
+    for (size_t i = 0; i < count; i++)
+    {
+      accion = obtener_accion(acciones,i);
+      Movimiento(accion);
+    }
+    memset(acciones,0,100);
+    PORTD = PORTD& ~(0B11111000);
+    _delay_ms(2000);
+  }
+}
